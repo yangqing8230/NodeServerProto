@@ -1,0 +1,163 @@
+// Copyright 2018 ei41 Inc.
+//
+
+syntax = "proto3";
+
+package ei41.rfnode;
+
+option java_multiple_files = true;
+option java_package = "com.ei41.rfnode";
+option java_outer_classname = "RFNodeProto";
+
+import "google/protobuf/empty.proto";
+
+message NodeId {
+  uint32 value = 1;
+}
+
+message DeviceId{
+  uint32 value = 1;
+}
+
+message NodeName {
+  string value = 1;
+}
+
+message TaskId {
+  uint32 value = 1;
+}
+
+message NodeDevice{
+  NodeId node_id = 1;
+  DeviceId device_id = 2;
+}
+
+//UTC time stamp
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+//WGS84 coordinate
+message Position {
+  //bit indicator
+  enum TimeAlarm {
+    NONE              = 0x00;
+    USE_UTC_TIME      = 0x01;
+    USE_UTC_PPS       = 0x02;
+    CLOCK_NOT_SET     = 0x04;
+    TIME_QUESTIONABLE = 0x08;
+    FROM_STATION      = 0x80;
+  }
+  double latitude  = 1;	
+  double longitude = 2;
+  double elevation = 3;
+  uint32 time_sync_alarms = 4;
+}
+
+enum TaskStatus {
+  READY  = 0;
+  RUN    = 1;
+  ABORT  = 2;
+  FINISH = 3;
+}
+
+enum TaskType {
+  NODE_CONTROL = 0;  //internal
+  SPCTRUM_SWEEP = 1; 
+  DRONE_DETECT = 2;
+  DISCRETE_SCAN = 3;
+  ANALOG_DEMODULATE = 4;
+  DIFF_ANT_DIRECT = 5;
+  TDOA_POSITION = 6;
+  IQ_ACQUIRE = 7;
+};
+
+
+message TaskSummary {
+  TaskId id = 1;
+  TaskType type = 2;
+  DeviceId device = 3;
+  TaskStatus status = 4;
+  Timestamp startTime = 5;
+}
+
+message NodeInfo {
+  NodeId id = 1;
+  string name = 2;
+  Timestamp last_heard_time = 3;
+  Position position = 4;
+  repeated DeviceId devices = 5;
+  repeated TaskSummary tasks = 6;
+}
+
+message CmdHeader{
+  uint32 sequence_number = 1;
+  ErrorType error_code = 2;
+  TaskId task_id = 3;
+  NodeDevice task_runner = 4;
+};
+
+enum NodeControlType{
+  REBOOT = 0;
+  ABORT_ALL = 1;
+}
+
+message NodeControlRequest{
+  repeated NodeId node_id = 1;
+  NodeControlType type = 2;
+}
+
+message NodeReply{
+  repeated CmdHeader cmd_header = 1;
+}
+
+message NodesInfo{
+  repeated NodeInfo node_info = 1;
+}
+
+message TaskAccount{
+  TaskId task_id = 1;
+  repeated NodeDevice node_devices = 2;
+}
+
+enum ErrorType {
+  ERR_NONE = 0;
+  ERR_NOTIMPLEMENTED = -1;
+  ERR_UNKNOWN = -2;
+  ERR_BUSY = -3;
+  ERR_ABORTED = -5;
+  ERR_CMD_NOREPLY = -6;
+  ERR_PARAM = -8;
+  ERR_STATION_NAME_EXISTS = -11;
+  ERR_INVALID_HANDLE = -15;
+  ERR_INVALID_REQUEST = -16;
+  ERR_NO_SENSORS = -20;
+  ERR_SOCKET_ERROR = -26;
+  ERR_NODE_NOT_FOUND = -27;
+  ERR_NO_DATA_AVAILABLE = -28;
+  ERR_BUFFER_TOO_SMALL = -30;
+  ERR_DIAGNOSTIC = -31;
+  ERR_COMMAND_FAILED = -38;
+  ERR_TIMEOUT = -40;
+  ERR_STRING_TOO_LONG = -43;
+  ERR_DATA_TYPE = -52;
+  ERR_AUTHORIZATION = -57;
+  ERR_LICENSE = -64;
+  ERR_MEAS_FAILED = -66;
+  ERR_DATA_AVAIL_TIMEOUT = -75;
+  ERR_TASK_NOT_FOUND = -76;
+  ERR_NODE_TASK_ASSIGN = -77;
+  ERR_SENSOR_TASK_ASSIGN = -78;
+  ERR_SENSOR_TASK_START = -79;
+  ERR_OPEN_FILE = -80;
+  ERR_COMPASS_NOT_AVAILABLE = -81;
+	ERR_TDOA = -82;
+  ERR_TASK_QUIT = -83;
+}
+
+service RFNodeService {
+  rpc ListAllNodes(google.protobuf.Empty) returns (NodesInfo) {}
+  rpc GetNodeInfo(NodeId) returns (NodeInfo) {}
+  rpc NodeControl(NodeControlRequest) returns (NodeReply) {}
+}

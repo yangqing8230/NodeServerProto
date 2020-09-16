@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package ei41.rfnode.drone_detect;
+
+option java_multiple_files = true;
+option java_package = "com.ei41.rfnode.drone_detect";
+option java_outer_classname = "DroneDetectProto";
+
+import "rf_node.proto";
+
+message StartDroneDetectRequest {
+  repeated NodeDevice task_runner = 1;
+  uint32 monitor_interval_sec = 2;
+}
+
+message StartDroneTrackRequest{
+  TaskId task_id = 1;
+  double frequency = 2;
+  double band_width = 3;
+  Timestamp sync_acquire_time = 4;
+  uint32 track_interval_msec = 5;
+}
+
+message DronePosition{
+  double ln = 1;
+  double lt = 2;
+  Timestamp time = 3;
+}
+
+message DroneFrequency{
+  NodeDevice detect_from = 1;
+  double center_frequency = 2;
+  Timestamp discover_time = 3;
+}
+
+message DetectResult{
+  DroneFrequency discover_result = 2;
+  DronePosition track_result = 3;
+}
+
+message HistoryEventQueryRequest{
+  Timestamp startTime = 1;
+  Timestamp stopTime = 2;
+}
+
+message HistoryEventQueryResponds{
+  repeated DetectResult result = 1;
+}
+
+service DroneDetectService {
+  rpc Start(StartDroneDetectRequest) returns (TaskAccount) {}
+  rpc StartTrack(StartDroneTrackRequest)returns(NodeReply) {} 
+  rpc StopTrack(TaskId)returns (NodeReply) {} 
+  rpc GetResult(TaskId) returns (stream DetectResult) {}
+  rpc Stop(TaskId) returns (NodeReply) {}
+  rpc QueryHistoryEvent(HistoryEventQueryRequest) returns(HistoryEventQueryResponds){}
+}

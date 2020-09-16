@@ -1,0 +1,69 @@
+// Copyright 2018 ei41 Inc.
+//
+
+syntax = "proto3";
+
+package ei41.rfnode.analog_demod;
+
+option java_multiple_files = true;
+option java_package = "com.ei41.rfnode.analog_demod";
+option java_outer_classname = "AnalogDemodProto";
+
+import "rf_node.proto";
+import "spectrum.proto";
+
+enum Demodulation {
+  NONE = 0;	
+  AM   = 1;	 
+  FM   = 2; 
+  CW   = 3;
+}
+
+message AnalogDemodChannel {
+  double        demod_frequency = 1;
+  double        demod_bandwidth = 2;
+}
+
+message AnalogDemodParms{
+  AnalogDemodChannel demod_channel = 1;
+  Demodulation  demod_type = 2;
+  double        spectrum_center_frequency = 3;
+  int32         spectrum_points = 4;
+  int32         spectrum_average_count = 5;
+  int32         spectrum_result_interval = 6;
+  int32         attenuation_grain = 7;
+  int32         antenna = 8; 
+}
+
+message audioResult{
+  AnalogDemodChannel    current_channel = 1;
+  repeated int32        audio_result = 2;      //high 16bit is meanless, for java compatibility
+}
+
+message DemodResult {
+  NodeDevice            result_from = 1;
+  audioResult           audio_result = 2;
+  spectrum.SweepResult  spectrum_result = 3;
+}
+
+message StartRequest {
+  repeated NodeDevice task_runner = 1;
+  AnalogDemodParms params = 2;
+}
+
+message ChangeChannelRequest {
+  TaskAccount task_account = 1;
+  AnalogDemodChannel channel = 2;
+}
+
+service AnalogDemodService {
+  rpc Start(StartRequest) returns (TaskAccount) {}
+  rpc GetResult(TaskId) returns (stream DemodResult) {}
+  rpc ChangeChannel(ChangeChannelRequest) returns (NodeReply) {}
+  rpc Stop(TaskId) returns (NodeReply) {}
+
+  //advanced API
+  //record IQ sweep result
+  rpc StartRecord(TaskAccount) returns (NodeReply) {}
+  rpc StopRecord(TaskAccount) returns (NodeReply) {} 
+}

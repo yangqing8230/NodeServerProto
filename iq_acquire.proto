@@ -1,0 +1,101 @@
+// Copyright 2020 ei41 Inc.
+//
+
+syntax = "proto3";
+
+package ei41.rfnode.IQ;
+
+option java_multiple_files = true;
+option java_package = "com.ei41.rfnode.IQ";
+option java_outer_classname = "IQProto";
+
+import "rf_node.proto";
+
+message TimeTriggerParams
+{
+    enum TimeTriggerType
+    {
+        NONE = 0;
+        ABS_TIME = 0x2;
+        REL_TIME = 0x4;
+    }
+    TimeTriggerType trigger_type = 1;
+    Timestamp       trigger_time = 2;
+    uint32		    sweep_interval = 3; 
+	uint32		    segment_interval = 4;
+}
+
+message LevelTriggerParams
+{
+    enum LevelTriggerType
+    {
+        NONE = 0;
+        LEVEL = 0x8;
+        RISING = 0x10;
+        FALLING = 0x18;
+    }
+    LevelTriggerType    trigger_type = 1;
+    float               trigger_value = 2;
+}
+
+message IQSweepParams
+{
+	uint32       num_sweeps = 1;
+	uint32		 num_blocks = 2;		
+	uint32		 num_transfer_samples = 3; 
+    bool         compress = 4;
+    TimeTriggerParams time_trigger_params = 5;
+}
+
+message IQSegmentParams
+{
+    double center_freq = 1;
+    double sample_rate = 2;
+    int32  attenuation_grain = 3;
+    int32  antenna = 4; 
+    LevelTriggerParams level_trigger_params = 5;
+}
+
+message StartIQRequest
+{
+    repeated NodeDevice task_runner = 1;
+    IQSweepParams sweep_params = 2;
+    repeated IQSegmentParams segment_params = 3;
+}
+
+message IQResultHeader
+{
+    uint64		sequence_number = 1;
+	uint64		segment_index = 2;
+    uint64		sweep_index = 3;
+    double		center_frequency = 4;
+    double		sample_rate = 5;
+    double      scale_to_volts = 6;
+    Timestamp   time_stamp = 7;
+    Position    position = 8;
+}
+
+message IQComplex
+{
+    float I = 1;
+    float Q = 2;
+}
+
+message IQResult
+{
+    NodeDevice result_from = 1;
+    IQResultHeader header = 2;
+    repeated IQComplex data = 3;
+}
+
+service IQService
+{
+    rpc StartSweep(StartIQRequest) returns (TaskAccount) {}
+    rpc GetResult(TaskId) returns (stream IQResult) {}
+    rpc StopSweep(TaskId) returns (NodeReply) {}
+
+    //advanced API
+    //record IQ sweep result
+    rpc StartRecord(TaskAccount) returns (NodeReply) {}
+    rpc StopRecord(TaskAccount) returns (NodeReply) {} 
+}

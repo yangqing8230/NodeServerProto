@@ -1,0 +1,92 @@
+// Copyright 2018 ei41 Inc.
+//
+
+syntax = "proto3";
+
+package ei41.rfnode.spectrum;
+
+option java_multiple_files = true;
+option java_package = "com.ei41.rfnode.spectrum";
+option java_outer_classname = "SpectrumProto";
+
+import "rf_node.proto";
+
+message FrequencySpan {
+  double start_freq = 1;
+  double stop_freq  = 2;
+}
+
+message SweepParams {
+  FrequencySpan freq_span = 1;
+  double        rbw = 2;
+  int32         monitor_interval = 3;
+  int32         expected_points = 4;
+  int32         average_count = 5;
+  int32         attenuation_grain = 6;
+  int32         antenna = 7; 
+}
+
+message SweepResultHeader {
+  uint32 sequence_number = 1;
+  FrequencySpan freq_span = 2;  
+  Timestamp timestamp = 3; 
+}
+
+message SignalDescriptor {
+  double bandwidth = 1;
+  double center_freq = 2;
+  float peak = 3;
+  float channel_power = 4;
+  int32 emerge_count = 5;
+}
+
+message SweepResultBuffer {
+  repeated float cur_trace = 1;
+  repeated float maxhold_trace = 2;
+  repeated float threshold_trace = 3; 
+  repeated SignalDescriptor detect_signals = 4;
+  repeated FrequencySpan over_threshold_sectors = 5;
+}
+
+message StartSweepRequest {
+  repeated NodeDevice task_runner = 1;
+  SweepParams sweep_params = 2;
+}
+
+message ChangeRangeRequest {
+  TaskAccount task_account = 1;
+  FrequencySpan span = 2;
+}
+
+message SweepResult {
+  NodeDevice result_from = 1;
+  SweepResultHeader header = 2;
+  SweepResultBuffer buffer = 3;
+}
+
+message ThresholdPoint{
+  double frequency = 1;
+  float level = 2;
+}
+
+message ThresholdRequest {
+  TaskAccount task_account = 1;
+  repeated ThresholdPoint threshold_points = 2;
+}
+
+service SpectrumService {
+  rpc StartSweep(StartSweepRequest) returns (TaskAccount) {}
+  rpc GetResult(TaskId) returns (stream SweepResult) {}
+  rpc ChangeRange(ChangeRangeRequest) returns (NodeReply) {}
+  rpc StopSweep(TaskId) returns (NodeReply) {}
+
+  //advanced API
+  //record sweep result
+  rpc StartRecord(TaskAccount) returns (NodeReply) {}
+  rpc StopRecord(TaskAccount) returns (NodeReply) {} 
+
+  //tell node to open one threshold
+  //node will send "over threshold sectors" data by comparing to the threshold points
+  //threshold will close if threshold_points in the request is empty
+  rpc Threshold(ThresholdRequest) returns (NodeReply) {}
+}
