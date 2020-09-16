@@ -79,14 +79,7 @@ service SpectrumService {
   rpc GetResult(TaskId) returns (stream SweepResult) {}
   rpc ChangeRange(ChangeRangeRequest) returns (NodeReply) {}
   rpc StopSweep(TaskId) returns (NodeReply) {}
-
-  //advanced API
-  //record sweep result
   rpc StartRecord(TaskAccount) returns (NodeReply) {}
   rpc StopRecord(TaskAccount) returns (NodeReply) {} 
-
-  //tell node to open one threshold
-  //node will send "over threshold sectors" data by comparing to the threshold points
-  //threshold will close if threshold_points in the request is empty
   rpc Threshold(ThresholdRequest) returns (NodeReply) {}
 }
